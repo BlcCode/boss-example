@@ -1,0 +1,6 @@
+name: 'Bosses'
+main: 'ru.blc.example.boss.BossPlugin'
+version: 1.0.0
+api-version: 1.16
+author: Blc_Dragon
+website: 'https://github.com/BlcCode/boss-example'
