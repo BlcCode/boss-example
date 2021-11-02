@@ -1,1 +1,23 @@
 database: 'boss_logs'
+
+bosses:
+  summoner:
+    spawn-location:
+      world: 'world'
+      x: 0
+      y: 60
+      z: 0
+      yaw: 0 #optional
+      pitch: 0 #optional
+    health: 100
+    respawn-delay: 60 #minutes
+    base-damage: 8 #optional
+  ravager:
+    spawn-location:
+      world: 'world'
+      x: 20
+      y: 60
+      z: 20
+    health: 100
+    respawn-delay: 60
+    base-damage: 8

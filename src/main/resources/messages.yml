@@ -1,0 +1,10 @@
+SUMMONER_NAME: '§6Призыватель'
+RAVAGER_NAME: '§6Разоритель'
+BOSS_DAMAGED: '§7Здоровье босса:§r %s'
+BOSS_SPAWN_HOLOGRAM:
+  - '§bПривет, §a%s!'
+  - '%s §fпоявится через §a%s'
+BOSS_DEFEATED:
+  - '§aБосс %s §aпобежден!'
+  - '§fЛучшие игроки: §a%s'
+BOSS_SPAWNED: '%s §fпоявился в мире'
