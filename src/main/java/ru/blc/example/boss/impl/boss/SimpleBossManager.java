@@ -10,6 +10,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.metadata.MetadataValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.blc.example.boss.BossListener;
 import ru.blc.example.boss.BossPlugin;
 import ru.blc.example.boss.api.boss.Boss;
 import ru.blc.example.boss.api.boss.BossManager;
@@ -25,6 +26,7 @@ public final class SimpleBossManager implements BossManager {
         final var bossManager = new SimpleBossManager(plugin,
                 new EnumMap<>(BossType.class), new EnumMap<>(BossType.class), new EnumMap<>(BossType.class));
         bossManager.createRegularBosses();
+        plugin.getServer().getPluginManager().registerEvents(BossListener.create(plugin, bossManager), plugin);
         return bossManager;
     }
 
