@@ -6,41 +6,47 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.blc.example.boss.BossPlugin;
+import ru.blc.example.boss.api.Hologram;
 import ru.blc.example.boss.api.boss.Boss;
 import ru.blc.example.boss.api.boss.BossType;
+import ru.blc.example.boss.impl.hologram.SimpleHologram;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @FieldDefaults(level = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class SimpleBoss implements Boss {
 
-    public static @NotNull SimpleBoss create(@NotNull Plugin plugin,
+    public static @NotNull SimpleBoss create(@NotNull BossPlugin plugin,
                                              @NotNull BossType type,
                                              @NotNull Location location,
                                              @NotNull final String name,
                                              long respawnDelay,
                                              final double maxHealth,
                                              final double baseDamage) {
-        return new SimpleBoss(plugin, null, type, location.clone(),
+        var boss = new SimpleBoss(plugin, null, type, location.clone(),
                 name, respawnDelay, maxHealth, baseDamage,
-                new Object2DoubleOpenHashMap<>());
+                new Object2DoubleOpenHashMap<>(),
+                plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
+                null);
+        boss.startRunnable();
+        return boss;
     }
 
-    @NotNull Plugin plugin;
+    @NotNull BossPlugin plugin;
     @Nullable LivingEntity entity;
     @NotNull final BossType type;
     @NotNull final Location spawnLocation;
@@ -49,6 +55,9 @@ public class SimpleBoss implements Boss {
     final double maxHealth;
     final double baseDamage;
     @NotNull final Object2DoubleMap<@NotNull OfflinePlayer> damagers;
+    final List<String> holoLines;
+    final Map<Player, Hologram> holograms;
+    RespawnRunnable respawnRunnable;
 
     @Override
     public @NotNull Location getSpawnLocation() {
@@ -72,6 +81,9 @@ public class SimpleBoss implements Boss {
         Objects.requireNonNull(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)).setBaseValue(maxHealth);
         entity.setHealth(maxHealth);
         entity.setMetadata("boss_meta", new FixedMetadataValue(plugin, this));
+        entity.setCustomNameVisible(true);
+        entity.setCustomName(getName());
+        entity.setPersistent(true);
         damagers.clear();
     }
 
@@ -81,11 +93,24 @@ public class SimpleBoss implements Boss {
         assert this.getEntity() != null : "Unreachable via if entity is null, isAlive() returns false";
         this.getEntity().setHealth(0);
         entity = null;
+        onKill();
     }
 
     @Override
     public void onKill() {
+        plugin.getTranslationList("BOSS_DEFEATED",
+                        this.getName(),
+                        this.getAllDamagers().stream().limit(3).map(OfflinePlayer::getName).collect(Collectors.joining(", ")))
+                .forEach(line ->
+                        plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(line)));
+        startRunnable();
+        plugin.getServer().getOnlinePlayers().forEach(this::createHologram);
+    }
 
+    protected void startRunnable() {
+        if (getRespawnDelay() <= 0) return;
+        respawnRunnable = new RespawnRunnable();
+        respawnRunnable.runTaskTimer(plugin, 0L, 20 * 60L);
     }
 
     @Override
@@ -98,5 +123,67 @@ public class SimpleBoss implements Boss {
         var result = new ArrayList<>(damagers.keySet());
         result.sort(Comparator.comparingDouble(damagers::getDouble).reversed());
         return result;
+    }
+
+    @Override
+    public void createHologram(@NotNull Player player) {
+        if (respawnRunnable != null) {
+            var newHolo = SimpleHologram.create(List.of(
+                    holoLines.get(0).formatted(player.getName()),
+                    holoLines.get(1).formatted(getName(),
+                            respawnRunnable.minutes + " " + formatCommon((int) respawnRunnable.minutes, "MINUTES_LEFT"))
+            ), getSpawnLocation());
+            var old = holograms.put(player, newHolo);
+            if (old != null) old.remove();
+            newHolo.show(player);
+        }
+    }
+
+    @Override
+    public void removeHologram(@NotNull Player player) {
+        var holo = holograms.remove(player);
+        if (holo == null) return;
+        holo.remove();
+    }
+
+    private final class RespawnRunnable extends BukkitRunnable {
+
+        private long minutes = getRespawnDelay() / 20 / 60;
+
+        @Override
+        public void run() {
+            if (minutes <= 0) {
+                this.cancel();
+                spawn();
+                plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                        plugin.getTranslation("BOSS_SPAWNED", getName())
+                ));
+                holograms.values().forEach(Hologram::remove);
+                holograms.clear();
+                respawnRunnable = null;
+                return;
+            }
+            for (Hologram value : holograms.values()) {
+                value.getLines().get(1).setTitle(
+                        holoLines.get(1).formatted(getName(), minutes + " " + formatCommon((int) minutes, "MINUTES_LEFT")));
+            }
+            minutes--;
+        }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    protected String formatCommon(int amount, String key) {
+        int format;
+        int mod = amount % 10;
+        if (amount >= 10 && amount <= 20) {
+            format = 2;
+        } else if (mod == 1) {
+            format = 0;
+        } else if (mod >= 2 && mod <= 4) {
+            format = 1;
+        } else {
+            format = 2;
+        }
+        return plugin.getTranslationList(key).get(format);
     }
 }

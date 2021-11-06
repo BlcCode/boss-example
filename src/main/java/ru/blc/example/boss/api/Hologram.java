@@ -14,6 +14,8 @@ public interface Hologram {
 
     void hide();
 
+    boolean canSee(@NotNull Player player);
+
     @NotNull
     @UnmodifiableView
     List<@NotNull HoloLine> getLines();

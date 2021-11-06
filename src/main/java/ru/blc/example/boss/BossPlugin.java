@@ -54,11 +54,11 @@ public class BossPlugin extends JavaPlugin {
         messagesFile = new File(getDataFolder(), "messages.yml");
 
         saveDefaultConfig();
-        reloadConfig();
     }
 
     @Override
     public void onEnable() {
+        reloadConfig();
         if (!createDatabaseConnection()) {
             //creation error logs by SqlConnection.class
             getSLF4JLogger().error("Plugin will disabled!");

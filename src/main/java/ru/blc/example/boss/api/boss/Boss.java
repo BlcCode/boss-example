@@ -66,4 +66,8 @@ public interface Boss {
     void onDamage(@NotNull Player player, double damage);
 
     @NotNull List<@NotNull OfflinePlayer> getAllDamagers();
+
+    void createHologram(@NotNull Player player);
+
+    void removeHologram(@NotNull Player player);
 }

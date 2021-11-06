@@ -4,18 +4,19 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.blc.example.boss.api.boss.Boss;
 import ru.blc.example.boss.api.boss.BossManager;
-
-import java.util.stream.Collectors;
+import ru.blc.example.boss.api.boss.BossType;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -47,13 +48,26 @@ public class BossListener implements Listener {
             }
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (!boss.isAlive()) {
-                    plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                            plugin.getTranslation("BOSS_DEFEATED",
-                                    boss.getName(),
-                                    boss.getAllDamagers().stream().limit(3).map(OfflinePlayer::getName).collect(Collectors.joining(" ")))
-                    ));
+                    boss.onKill();
                 }
             });
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        for (BossType type : BossType.values()) {
+            Boss boss = manager.getRegularBoss(type);
+            boss.createHologram(event.getPlayer());
+        }
+
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        for (BossType type : BossType.values()) {
+            Boss boss = manager.getRegularBoss(type);
+            boss.removeHologram(event.getPlayer());
         }
     }
 

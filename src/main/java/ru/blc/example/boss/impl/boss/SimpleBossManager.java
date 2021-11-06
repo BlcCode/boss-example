@@ -85,8 +85,8 @@ public final class SimpleBossManager implements BossManager {
                     plugin.getConfig().getConfigurationSection("bosses." + bossType.name().toLowerCase(Locale.ROOT)),
                     "boss " + bossType + " not configured");
 
-            Preconditions.checkState(bossConfig.isDouble("health"), bossConfig.getCurrentPath() + "doesn't contains health");
-            Preconditions.checkState(bossConfig.isLong("respawn-delay"), bossConfig.getCurrentPath() + "doesn't contains respawn-delay");
+            Preconditions.checkState(bossConfig.contains("health"), bossConfig.getCurrentPath() + "doesn't contains health");
+            Preconditions.checkState(bossConfig.contains("respawn-delay"), bossConfig.getCurrentPath() + "doesn't contains respawn-delay");
             Preconditions.checkState(bossConfig.isLocation("spawn-location"), bossConfig.getCurrentPath() + "doesn't contains spawn-location or it's not a bukkit location format");
 
             double maxHealth = bossConfig.getDouble("health");

@@ -9,6 +9,8 @@ public interface HoloLine {
 
     void show(@NotNull Player player);
 
+    boolean canSee(@NotNull Player player);
+
     void hide();
 
     @NotNull String getTitle();
