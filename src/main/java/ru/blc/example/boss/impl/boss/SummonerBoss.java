@@ -1,6 +1,5 @@
 package ru.blc.example.boss.impl.boss;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -43,7 +42,7 @@ public class SummonerBoss extends SimpleBoss {
                            @NotNull Location spawnLocation,
                            @NotNull String name,
                            long respawnDelay, double maxHealth, double baseDamage,
-                           @NotNull Object2DoubleMap<@NotNull OfflinePlayer> damagers,
+                           @NotNull Map<@NotNull OfflinePlayer, @NotNull DamageData> damagers,
                            List<String> holoLines, Map<Player, Hologram> holograms,
                            SimpleBoss.RespawnRunnable respawnRunnable) {
         super(plugin, entity, type, spawnLocation, name, respawnDelay, maxHealth, baseDamage, damagers, holoLines, holograms, respawnRunnable);

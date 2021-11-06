@@ -1,6 +1,5 @@
 package ru.blc.example.boss.impl.boss;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import net.minecraft.server.v1_16_R3.EntityCreature;
 import net.minecraft.server.v1_16_R3.EntityLiving;
 import net.minecraft.server.v1_16_R3.PathfinderGoalMeleeAttack;
@@ -40,7 +39,7 @@ public class RavagerBoss extends SimpleBoss {
                           @NotNull Location spawnLocation,
                           @NotNull String name,
                           long respawnDelay, double maxHealth, double baseDamage,
-                          @NotNull Object2DoubleMap<@NotNull OfflinePlayer> damagers,
+                          @NotNull Map<@NotNull OfflinePlayer, @NotNull DamageData> damagers,
                           List<String> holoLines, Map<Player, Hologram> holograms,
                           SimpleBoss.RespawnRunnable respawnRunnable) {
         super(plugin, entity, type, spawnLocation, name, respawnDelay, maxHealth, baseDamage, damagers, holoLines, holograms, respawnRunnable);

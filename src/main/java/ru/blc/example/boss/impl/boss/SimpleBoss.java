@@ -1,7 +1,5 @@
 package ru.blc.example.boss.impl.boss;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,6 +29,8 @@ import java.util.stream.Collectors;
 @Getter
 public class SimpleBoss implements Boss {
 
+    public static final String ADD_BOSS_ROW = "INSERT `defating`(`boss`, `best_players`) VALUES (?, ?);";
+
     public static @NotNull SimpleBoss create(@NotNull BossPlugin plugin,
                                              @NotNull BossType type,
                                              @NotNull Location location,
@@ -41,12 +41,12 @@ public class SimpleBoss implements Boss {
         var boss = switch (type) {
             case RAVAGER -> new RavagerBoss(plugin, null, type, location.clone(),
                     name, respawnDelay, maxHealth, baseDamage,
-                    new Object2DoubleOpenHashMap<>(),
+                    new HashMap<>(),
                     plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
                     null);
             case SUMMONER -> new SummonerBoss(plugin, null, type, location.clone(),
                     name, respawnDelay, maxHealth, baseDamage,
-                    new Object2DoubleOpenHashMap<>(),
+                    new HashMap<>(),
                     plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
                     null);
         };
@@ -62,7 +62,7 @@ public class SimpleBoss implements Boss {
     long respawnDelay;
     final double maxHealth;
     final double baseDamage;
-    @NotNull final Object2DoubleMap<@NotNull OfflinePlayer> damagers;
+    @NotNull final Map<@NotNull OfflinePlayer, @NotNull DamageData> damagers;
     final List<String> holoLines;
     final Map<Player, Hologram> holograms;
     RespawnRunnable respawnRunnable;
@@ -111,13 +111,25 @@ public class SimpleBoss implements Boss {
 
     @Override
     public void onKill() {
-        plugin.getTranslationList("BOSS_DEFEATED",
-                        this.getName(),
-                        this.getAllDamagers().stream().limit(3).map(OfflinePlayer::getName).collect(Collectors.joining(", ")))
-                .forEach(line ->
-                        plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(line)));
-        startRunnable();
-        plugin.getServer().getOnlinePlayers().forEach(this::createHologram);
+        if (plugin.isEnabled()) { //if plugin is not enabled boss killed by plugin disabling
+            plugin.getTranslationList("BOSS_DEFEATED",
+                            this.getName(),
+                            this.getAllDamagers().stream().limit(3).map(data -> data.getPlayer().getName()).collect(Collectors.joining(", ")))
+                    .forEach(line ->
+                            plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(line)));
+            startRunnable();
+            plugin.getServer().getOnlinePlayers().forEach(this::createHologram);
+            writeSql();
+        }
+    }
+
+    protected void writeSql() {
+        final var sql = plugin.getSqlConnection();
+        var damagers = getAllDamagers();
+        final String best = damagers.subList(0, Math.min(damagers.size(), 3)).toString();
+        sql.prepareStatement(ADD_BOSS_ROW, getType().ordinal(), best)
+                .ifPresentOrElse(sql::executeUpdateAsync,
+                        () -> plugin.getSLF4JLogger().error("Failed to prepare boss-defeat information for database, data: {}, {}", getType(), best));
     }
 
     protected void startRunnable() {
@@ -128,13 +140,13 @@ public class SimpleBoss implements Boss {
 
     @Override
     public void onDamage(@NotNull Player player, double damage) {
-        damagers.computeDouble(player, (key, value) -> value == null ? damage : value + damage);
+        damagers.computeIfAbsent(player, DamageData::new).addDamage(damage);
     }
 
     @Override
-    public @NotNull List<@NotNull OfflinePlayer> getAllDamagers() {
-        var result = new ArrayList<>(damagers.keySet());
-        result.sort(Comparator.comparingDouble(damagers::getDouble).reversed());
+    public @NotNull List<@NotNull DamageData> getAllDamagers() {
+        var result = new ArrayList<>(damagers.values());
+        result.sort(Comparator.comparingDouble(DamageData::getDamage).reversed());
         return result;
     }
 

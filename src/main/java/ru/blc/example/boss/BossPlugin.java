@@ -65,6 +65,10 @@ public class BossPlugin extends JavaPlugin {
             setEnabled(false);
             return;
         }
+        sqlConnection.prepareStatement(SqlConnection.createTableQuery).ifPresentOrElse(sqlConnection::executeUpdate,
+                () -> {
+                    throw new IllegalStateException();
+                });
         bossManager = SimpleBossManager.create(this);
     }
 

@@ -13,6 +13,14 @@ import java.util.Optional;
 
 public class SqlConnection {
 
+    public static final String createTableQuery = """
+            CREATE TABLE IF NOT EXISTS `defating` (
+            \t`boss` TINYINT(4) NOT NULL,
+            \t`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            \t`best_players` TEXT NOT NULL
+            )
+            ENGINE=InnoDB;""";
+
     private final JavaPlugin plugin;
     private Connection connection;
 

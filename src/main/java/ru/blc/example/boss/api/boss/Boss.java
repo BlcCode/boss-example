@@ -1,5 +1,8 @@
 package ru.blc.example.boss.api.boss;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.EntityType;
@@ -68,9 +71,30 @@ public interface Boss {
 
     void onDamage(@NotNull Player player, double damage);
 
-    @NotNull List<@NotNull OfflinePlayer> getAllDamagers();
+    @NotNull List<@NotNull DamageData> getAllDamagers();
 
     void createHologram(@NotNull Player player);
 
     void removeHologram(@NotNull Player player);
+
+
+    @RequiredArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    class DamageData {
+        private final OfflinePlayer player;
+        private double damage;
+
+        public void addDamage(double damage) {
+            this.damage += damage;
+        }
+
+        @Override
+        public String toString() {
+            return "{" +
+                    "player: " + player.getName() + ", " +
+                    "damage: " + damage +
+                    '}';
+        }
+    }
 }
