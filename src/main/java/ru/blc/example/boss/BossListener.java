@@ -10,6 +10,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +69,21 @@ public class BossListener implements Listener {
         for (BossType type : BossType.values()) {
             Boss boss = manager.getRegularBoss(type);
             boss.removeHologram(event.getPlayer());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onTarget(EntityTargetLivingEntityEvent event) {
+        final var target = event.getTarget();
+        if (target == null) return;
+        if (event.getEntity().hasMetadata("summoner_boss_minion")) {
+            if (target.getType() == EntityType.VILLAGER)
+                event.setCancelled(true);
+        }
+        if (event.getEntity() instanceof LivingEntity entity) {
+            final var boss = manager.getBossByEntity(entity);
+            if (boss == null) return;
+            if (!boss.canTarget(target.getType())) event.setCancelled(true);
         }
     }
 

@@ -2,6 +2,7 @@ package ru.blc.example.boss.api.boss;
 
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +31,8 @@ public interface Boss {
     @NotNull Location getSpawnLocation();
 
     @NotNull String getName();
+
+    boolean canTarget(EntityType entityType);
 
     double getMaxHealth();
 

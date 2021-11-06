@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -37,11 +38,18 @@ public class SimpleBoss implements Boss {
                                              long respawnDelay,
                                              final double maxHealth,
                                              final double baseDamage) {
-        var boss = new SimpleBoss(plugin, null, type, location.clone(),
-                name, respawnDelay, maxHealth, baseDamage,
-                new Object2DoubleOpenHashMap<>(),
-                plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
-                null);
+        var boss = switch (type) {
+            case RAVAGER -> new RavagerBoss(plugin, null, type, location.clone(),
+                    name, respawnDelay, maxHealth, baseDamage,
+                    new Object2DoubleOpenHashMap<>(),
+                    plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
+                    null);
+            case SUMMONER -> new SummonerBoss(plugin, null, type, location.clone(),
+                    name, respawnDelay, maxHealth, baseDamage,
+                    new Object2DoubleOpenHashMap<>(),
+                    plugin.getTranslationList("BOSS_SPAWN_HOLOGRAM"), new WeakHashMap<>(),
+                    null);
+        };
         boss.startRunnable();
         return boss;
     }
@@ -65,6 +73,11 @@ public class SimpleBoss implements Boss {
     }
 
     @Override
+    public boolean canTarget(EntityType entityType) {
+        return true;
+    }
+
+    @Override
     public boolean isAlive() {
         return this.getEntity() != null && !this.getEntity().isDead();
     }
@@ -83,7 +96,7 @@ public class SimpleBoss implements Boss {
         entity.setMetadata("boss_meta", new FixedMetadataValue(plugin, this));
         entity.setCustomNameVisible(true);
         entity.setCustomName(getName());
-        entity.setPersistent(true);
+        entity.setRemoveWhenFarAway(false);
         damagers.clear();
     }
 
@@ -108,7 +121,7 @@ public class SimpleBoss implements Boss {
     }
 
     protected void startRunnable() {
-        if (getRespawnDelay() <= 0) return;
+        if (getRespawnDelay() <= 0 || !plugin.isEnabled()) return;
         respawnRunnable = new RespawnRunnable();
         respawnRunnable.runTaskTimer(plugin, 0L, 20 * 60L);
     }
@@ -146,7 +159,7 @@ public class SimpleBoss implements Boss {
         holo.remove();
     }
 
-    private final class RespawnRunnable extends BukkitRunnable {
+    protected final class RespawnRunnable extends BukkitRunnable {
 
         private long minutes = getRespawnDelay() / 20 / 60;
 
