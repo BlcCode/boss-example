@@ -7,11 +7,16 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import ru.blc.example.boss.api.boss.BossManager;
+import ru.blc.example.boss.command.BossForceKillSubCommand;
+import ru.blc.example.boss.command.BossForceSpawnSubCommand;
+import ru.blc.example.boss.command.BossHelpCommand;
+import ru.blc.example.boss.command.BossRootCommand;
 import ru.blc.example.boss.impl.boss.SimpleBossManager;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -70,6 +75,7 @@ public class BossPlugin extends JavaPlugin {
                     throw new IllegalStateException();
                 });
         bossManager = SimpleBossManager.create(this);
+        registerCommands(bossManager);
     }
 
     @Override
@@ -80,6 +86,15 @@ public class BossPlugin extends JavaPlugin {
         if (bossManager != null) {
             bossManager.killAll();
         }
+    }
+
+    private void registerCommands(@NotNull BossManager bossManager) {
+        getServer().getCommandMap().register("boss",
+                BossRootCommand.create("boss", "control bosses", "command.boss", Collections.emptySet(),
+                        new BossHelpCommand(),
+                        new BossForceSpawnSubCommand(bossManager),
+                        new BossForceKillSubCommand(bossManager)
+                ).asBukkitCommand());
     }
 
     //other

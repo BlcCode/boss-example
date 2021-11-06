@@ -85,6 +85,10 @@ public class SimpleBoss implements Boss {
     @Override
     public void spawn() {
         if (this.isAlive()) return;
+        if (respawnRunnable != null) {
+            respawnRunnable.cancel();
+            return;
+        }
         entity = this.getSpawnLocation().getWorld().spawn(this.getSpawnLocation(), this.getType().getEntityType());
         if (baseDamage > 0) {
             entity.registerAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
@@ -179,13 +183,6 @@ public class SimpleBoss implements Boss {
         public void run() {
             if (minutes <= 0) {
                 this.cancel();
-                spawn();
-                plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(
-                        plugin.getTranslation("BOSS_SPAWNED", getName())
-                ));
-                holograms.values().forEach(Hologram::remove);
-                holograms.clear();
-                respawnRunnable = null;
                 return;
             }
             for (Hologram value : holograms.values()) {
@@ -193,6 +190,18 @@ public class SimpleBoss implements Boss {
                         holoLines.get(1).formatted(getName(), minutes + " " + formatCommon((int) minutes, "MINUTES_LEFT")));
             }
             minutes--;
+        }
+
+        @Override
+        public synchronized void cancel() throws IllegalStateException {
+            super.cancel();
+            respawnRunnable = null;
+            spawn();
+            plugin.getServer().broadcast(LegacyComponentSerializer.legacySection().deserialize(
+                    plugin.getTranslation("BOSS_SPAWNED", getName())
+            ));
+            holograms.values().forEach(Hologram::remove);
+            holograms.clear();
         }
     }
 
